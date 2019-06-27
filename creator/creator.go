@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"math"
 	"sync"
+
+	"code.google.com/p/graphics-go/graphics"
 )
 
 type Creator struct {
@@ -82,6 +84,8 @@ func (c *Creator) merge(images ...image.Image) {
 	canvas := image.NewRGBA(image.Rect(0, 0, width, height))
 
 	for i, img := range images {
+		img, _ = c.resize(img)
+
 		var (
 			row  = i / cols
 			col  = i % cols
@@ -101,4 +105,15 @@ func (c *Creator) merge(images ...image.Image) {
 	err = jpeg.Encode(imgw, canvas, &jpeg.Options{jpeg.DefaultQuality})
 
 	fmt.Println(imgw.Name(), err)
+}
+
+func (c *Creator) resize(img image.Image) (image.Image, error) {
+	size := c.conf.ImageSize
+	if img.Bounds().Size().X == size {
+		return img, nil
+	}
+
+	dst := image.NewRGBA(image.Rect(0, 0, size, size))
+	err := graphics.Scale(dst, img)
+	return dst, err
 }
