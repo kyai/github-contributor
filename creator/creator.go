@@ -5,8 +5,10 @@ import (
 	"image"
 	"image/draw"
 	"image/jpeg"
-	"io/ioutil"
 	"math"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"code.google.com/p/graphics-go/graphics"
@@ -43,6 +45,12 @@ func (c *Creator) downInRestricted() (images []image.Image, err error) {
 	users, err := getContributorsByRepo(c.repo)
 	if err != nil {
 		return
+	}
+
+	if c.conf.Reverse {
+		for i, j := 0, len(users)-1; i < j; i, j = i+1, j-1 {
+			users[i], users[j] = users[j], users[i]
+		}
 	}
 
 	images = make([]image.Image, len(users))
@@ -83,6 +91,9 @@ func (c *Creator) merge(images ...image.Image) {
 
 	canvas := image.NewRGBA(image.Rect(0, 0, width, height))
 
+	// background color
+	draw.Draw(canvas, canvas.Bounds(), &image.Uniform{c.conf.BgColor}, image.ZP, draw.Src)
+
 	for i, img := range images {
 		img, _ = c.resize(img)
 
@@ -97,14 +108,11 @@ func (c *Creator) merge(images ...image.Image) {
 		draw.Draw(canvas, img.Bounds().Add(offset), img, image.ZP, draw.Over)
 	}
 
-	imgw, err := ioutil.TempFile("./", "image-")
+	path, err := c.write(canvas)
 	if err != nil {
 		panic(err)
 	}
-	defer imgw.Close()
-	err = jpeg.Encode(imgw, canvas, &jpeg.Options{jpeg.DefaultQuality})
-
-	fmt.Println(imgw.Name(), err)
+	fmt.Println(path)
 }
 
 func (c *Creator) resize(img image.Image) (image.Image, error) {
@@ -116,4 +124,21 @@ func (c *Creator) resize(img image.Image) (image.Image, error) {
 	dst := image.NewRGBA(image.Rect(0, 0, size, size))
 	err := graphics.Scale(dst, img)
 	return dst, err
+}
+
+func (c *Creator) write(img image.Image) (path string, err error) {
+	if err = os.MkdirAll(c.conf.CacheDir, os.ModePerm); err != nil {
+		return
+	}
+
+	fileName := strings.Replace(c.repo, "/", "-", 1) + ".jpeg"
+	file, err := os.Create(filepath.Join(c.conf.CacheDir, fileName))
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	err = jpeg.Encode(file, img, &jpeg.Options{jpeg.DefaultQuality})
+	path = file.Name()
+	return
 }
