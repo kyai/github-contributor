@@ -135,7 +135,7 @@ func (c *Creator) write(img image.Image) (path string, err error) {
 	}
 	defer file.Close()
 
-	err = jpeg.Encode(file, img, &jpeg.Options{jpeg.DefaultQuality})
+	err = jpeg.Encode(file, img, &jpeg.Options{c.conf.Quality})
 	path = file.Name()
 	return
 }
