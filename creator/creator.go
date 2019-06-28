@@ -31,16 +31,17 @@ func (c *Creator) Set(conf *Config) *Creator {
 	return c
 }
 
-func (c *Creator) Create() {
+func (c *Creator) Create() (path string, err error) {
 	images, err := c.downInRestricted()
 	if err != nil {
-		panic(err)
+		return
 	}
-	c.merge(images...)
+	return c.write(c.merge(images...))
 }
 
 func (c *Creator) downInRestricted() (images []image.Image, err error) {
 	active := make(chan int, c.conf.MaxActive)
+	defer close(active)
 
 	users, err := getContributorsByRepo(c.repo)
 	if err != nil {
@@ -81,7 +82,7 @@ func (c *Creator) downInRestricted() (images []image.Image, err error) {
 	return
 }
 
-func (c *Creator) merge(images ...image.Image) {
+func (c *Creator) merge(images ...image.Image) image.Image {
 
 	cols := c.conf.ImageCols
 	rows := int(math.Ceil(float64(len(images)) / float64(cols)))
@@ -108,11 +109,7 @@ func (c *Creator) merge(images ...image.Image) {
 		draw.Draw(canvas, img.Bounds().Add(offset), img, image.ZP, draw.Over)
 	}
 
-	path, err := c.write(canvas)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(path)
+	return canvas
 }
 
 func (c *Creator) resize(img image.Image) (image.Image, error) {

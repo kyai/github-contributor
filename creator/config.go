@@ -1,12 +1,16 @@
 package creator
 
-import "image/color"
+import (
+	"image/color"
+	"image/jpeg"
+)
 
 type Config struct {
 	ImageSize  int
 	ImageRows  int
 	ImageCols  int
 	ImageApart int
+	Quality    int
 	BgColor    color.Color
 	Reverse    bool
 	CacheDir   string
@@ -18,6 +22,7 @@ var DefaultConfig = &Config{
 	0,
 	10,
 	10,
+	jpeg.DefaultQuality,
 	color.White,
 	true,
 	"./github-avatar-cache",
