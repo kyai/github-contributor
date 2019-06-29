@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<title>Github contributor</title>
+</head>
+<body>
+<div id="app">
+    <div id="main">
+        <div class="top">
+            <input type="text" id="repo" value="golang/go">
+            <button onclick="run()">ok</button>
+        </div>
+        <div class="set"></div>
+        <div id="result">
+            <template v-if="list.length">
+                <table>
+                    <tr v-for="r in rows">
+                        <td v-for="c in cols">
+                            <img :src="list[(r-1)*rows+c-1].author.avatar" alt="" :style="imageStyle">
+                        </td>
+                    </tr>
+                </table>
+            </template>
+        </div>
+        <div class="down">
+            <button>download</button>
+        </div>
+    </div>
+</div>
+</body>
+<script src="https://code.jquery.com/jquery-2.0.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.min.js"></script>
+<script>
+$(function(){
+    App = new Vue({
+        el: '#app',
+        data: {
+            list: [],
+            rows: 10,
+            cols: 10,
+            imageStyle: {
+                width: '60px',
+                height: '60px',
+            },
+        },
+        filters: {
+        },
+        methods: {
+        }
+    })
+})
+
+function run(){
+    var repo = document.getElementById('repo').value
+    data(repo)
+}
+function data(repo){
+    $.ajax({
+        type: "GET",
+        url: "/data/" + repo,
+        dataType: "json",
+        success: function(d){
+            console.log(d)
+            App.list = d
+        }
+    })
+}
+</script>
+</html>
