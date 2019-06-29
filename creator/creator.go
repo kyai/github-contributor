@@ -6,8 +6,10 @@ import (
 	"image/draw"
 	"image/jpeg"
 	"math"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -43,15 +45,9 @@ func (c *Creator) downInRestricted() (images []image.Image, err error) {
 	active := make(chan int, c.conf.MaxActive)
 	defer close(active)
 
-	users, err := getContributorsByRepo(c.repo)
+	users, err := c.getContributors()
 	if err != nil {
 		return
-	}
-
-	if c.conf.Reverse {
-		for i, j := 0, len(users)-1; i < j; i, j = i+1, j-1 {
-			users[i], users[j] = users[j], users[i]
-		}
 	}
 
 	images = make([]image.Image, len(users))
@@ -78,6 +74,29 @@ func (c *Creator) downInRestricted() (images []image.Image, err error) {
 	}
 
 	wg.Wait()
+
+	return
+}
+
+func (c *Creator) getContributors() (contributors []*Contributor, err error) {
+	contributors, err = getContributorsByRepo(c.repo)
+	if err != nil {
+		return
+	}
+
+	for _, v := range contributors {
+		u, _ := url.Parse(v.Author.Avatar)
+		q := u.Query()
+		q.Set("s", strconv.Itoa(c.conf.ImageSize))
+		u.RawQuery = q.Encode()
+		v.Author.Avatar = u.String()
+	}
+
+	if c.conf.Reverse {
+		for i, j := 0, len(contributors)-1; i < j; i, j = i+1, j-1 {
+			contributors[i], contributors[j] = contributors[j], contributors[i]
+		}
+	}
 
 	return
 }
