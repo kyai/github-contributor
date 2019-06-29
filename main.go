@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kyai/github-contributors/creator"
+	"github.com/kyai/github-contributor/creator"
 )
 
 func main() {
